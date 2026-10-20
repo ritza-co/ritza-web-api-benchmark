@@ -1,6 +1,6 @@
 # ritza-web-api-benchmark
 
-Independent benchmark comparing Firecrawl `/scrape` and Tavily `/extract` on 848 real-world URLs. Written to accompany the article [Firecrawl vs. Tavily: Which Web Data API Should You Use?](https://techstackups.com/firecrawl-vs-tavily).
+Independent benchmark comparing Firecrawl `/scrape` and Tavily `/extract` on 848 real-world URLs. Written to accompany the article [Firecrawl vs. Tavily: Which Web Data API Should You Use?](https://techstackups.com/comparisons/firecrawl-vs-tavily/).
 
 ## Results summary
 
