@@ -65,7 +65,7 @@ def main():
 
     md = f"""# Tavily /extract Eval Results
 
-Dataset: `firecrawl/scrape-content-dataset-v1` ({DATASET_TOTAL} URLs, {total} usable after filtering dataset errors)
+Dataset: `firecrawl/scrape-content-dataset-v1` ({DATASET_TOTAL} URLs, {total} usable after filtering dataset errors and PDFs)
 Endpoint: Tavily `/extract` (`extract_depth="basic"`)
 Run date: {date.today()}
 
@@ -114,7 +114,7 @@ See the [methodology notes](#methodology-notes) below for more detail on the sco
 - Batched 5 URLs per API call (1 credit per batch at PAYG rate of $0.008/credit).
 - Latency computed over successful rows only. Rows exceeding 30,000ms excluded from P50/P95.
 - Coverage = at least 10% of truth_text tokens present in extracted content.
-- {DATASET_TOTAL - total} rows excluded from dataset (had errors or missing truth_text).
+- {DATASET_TOTAL - total} rows excluded from dataset (had errors, missing truth_text, or were PDFs).
 - {len(dead)} URLs confirmed dead via HEAD check and excluded from all metrics.
 - Failure reasons recorded per URL in results.csv (`failure_reason` column).
 

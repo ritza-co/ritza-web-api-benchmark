@@ -62,8 +62,8 @@ def main():
 
     md = f"""# Firecrawl /scrape Eval Results
 
-Dataset: `firecrawl/scrape-content-dataset-v1` ({DATASET_TOTAL} URLs, {total} usable after filtering dataset errors)
-Endpoint: Firecrawl `/scrape` (`only_main_content=True`, `formats=["markdown"]`)
+Dataset: `firecrawl/scrape-content-dataset-v1` ({DATASET_TOTAL} URLs, {total} usable after filtering dataset errors and PDFs)
+Endpoint: Firecrawl v2 `/scrape` (`onlyMainContent=true`, `formats=["markdown"]`)
 Run date: {date.today()}
 
 ## URL classification
@@ -93,12 +93,12 @@ When Firecrawl successfully retrieved a page (n={success_stats['n']}), recall wa
 
 ## Methodology notes
 
-- Each URL scraped individually via the Firecrawl `/scrape` endpoint.
-- Cost calculated at $0.0063/URL (PAYG rate at time of testing).
+- Each URL scraped individually via the Firecrawl v2 `/scrape` endpoint with `maxAge=0` (live fetch, no cache).
+- Cost calculated at $0.0038/URL (Hobby plan billed monthly: $19 for 5,000 credits).
 - Latency computed over successful rows only. Rows exceeding 30,000ms excluded from P50/P95.
 - Coverage = at least 10% of truth_text tokens present in extracted content.
 - Recall = fraction of truth_text tokens present in extracted content (primary quality metric).
-- {DATASET_TOTAL - total} rows excluded from dataset (had errors or missing truth_text).
+- {DATASET_TOTAL - total} rows excluded from dataset (had errors, missing truth_text, or were PDFs).
 - {len(dead)} URLs confirmed dead via HEAD check and excluded from all metrics.
 - Failure reasons recorded per URL in results.csv (`failure_reason` column).
 
