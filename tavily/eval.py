@@ -11,6 +11,9 @@ Failure classification:
 - "timeout"  — Tavily timed out on this batch
 - "no_content" — Tavily returned a result object but raw_content was empty
 
+API errors are recorded in the api_error column. The run stops on HTTP 432/433
+(plan or pay-as-you-go limit reached) instead of recording empty results.
+
 Run: python3 eval.py
 Resumes from results.csv if interrupted (skips already-processed IDs).
 """
@@ -37,7 +40,7 @@ CREDITS_PER_BATCH = 1
 RESULTS_FIELDS = [
     "id", "url", "success", "coverage", "recall",
     "latency_ms", "credits_used", "cost_usd",
-    "content_length", "truth_length", "failure_reason",
+    "content_length", "truth_length", "failure_reason", "api_error",
 ]
 
 _ssl_ctx = ssl.create_default_context()
@@ -67,6 +70,8 @@ def compute_recall(retrieved, truth):
     if not retrieved or not truth:
         return 0.0
     tru_tokens = Counter(tokenize(truth))
+    if not tru_tokens:
+        return 0.0
     ret_tokens = Counter(tokenize(retrieved))
     common = sum((ret_tokens & tru_tokens).values())
     return common / sum(tru_tokens.values())
@@ -76,15 +81,23 @@ def compute_coverage(retrieved, truth):
     if not retrieved or not truth:
         return False
     truth_tokens = set(tokenize(truth))
+    if not truth_tokens:
+        return False
     ret_tokens = set(tokenize(retrieved))
     return len(truth_tokens & ret_tokens) / len(truth_tokens) >= 0.10
 
 
+def is_pdf(url):
+    return url.lower().split("?")[0].endswith(".pdf")
+
+
 def load_dataset():
+    # PDFs are excluded: this benchmark compares HTML page extraction, and
+    # Firecrawl bills PDFs per page, which makes their cost unbounded.
     rows = []
     with open(DATASET_PATH, newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
-            if not row["error"] and row["truth_text"]:
+            if not row["error"] and row["truth_text"] and not is_pdf(row["url"]):
                 rows.append(row)
     return rows
 
@@ -151,6 +164,9 @@ def main():
                 timeout=30,
             )
             latency_ms = (time.time() - start) * 1000
+            if resp.status_code in (432, 433):
+                print(f"\nCredit limit reached, stopping: {resp.text}")
+                return
             resp.raise_for_status()
             data = resp.json()
 
@@ -191,6 +207,8 @@ def main():
             elif url in tavily_failed:
                 # Tavily told us it failed — classify by HEAD-checking the URL
                 failure_reason = classify_dead_url(url)
+                if failure_reason == "alive":
+                    failure_reason = "no_content"
             else:
                 # Tavily returned a result object but raw_content was empty
                 failure_reason = "no_content"
@@ -210,6 +228,7 @@ def main():
                 "content_length": len(content),
                 "truth_length": len(truth),
                 "failure_reason": failure_reason,
+                "api_error": batch_api_error or tavily_failed.get(url, ""),
             }
             append_result(result)
             all_results.append({

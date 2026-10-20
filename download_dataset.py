@@ -15,6 +15,10 @@ with open(OUT, newline="", encoding="utf-8") as f:
     rows = list(csv.DictReader(f))
 
 total = len(rows)
-usable = sum(1 for r in rows if not r.get("error") and r.get("truth_text"))
+usable = sum(
+    1 for r in rows
+    if not r.get("error") and r.get("truth_text")
+    and not r["url"].lower().split("?")[0].endswith(".pdf")
+)
 print(f"Total rows: {total}")
-print(f"Usable rows (no error, has truth_text): {usable}")
+print(f"Usable rows (no error, has truth_text, not a PDF): {usable}")
